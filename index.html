@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auto a control remoto con conducción autónoma | Proyecto de Sensores</title>
+  <meta name="description" content="Auto a escala con forma de Fennec que se maneja con control remoto o solo, con detección de obstáculos. Proyecto de la materia de Sensores: explicación, problemas, componentes, presupuesto y conexiones.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="barra" id="barra">
+    <div class="barra-interior">
+      <a class="marca" href="#inicio" aria-label="Ir al inicio">
+        <img src="img/logo.png" alt="" width="40" height="40">
+        <span>Auto Fennec RC</span>
+      </a>
+      <button class="menu-boton" id="menuBoton" aria-expanded="false" aria-controls="menu">Menú</button>
+      <nav id="menu" class="menu" aria-label="Secciones">
+        <a href="#proyecto">Proyecto</a>
+        <a href="#problemas">Problemas</a>
+        <a href="#funcionamiento">Funcionamiento</a>
+        <a href="#componentes">Componentes</a>
+        <a href="#presupuesto">Presupuesto</a>
+        <a href="#conexiones">Conexiones</a>
+        <a href="#carcasa">Carcasa</a>
+        <a href="#bitacora">Bitácora</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+
+    <!-- ===================== INICIO ===================== -->
+    <section class="hero" id="inicio">
+      <div class="hero-texto">
+        <h1>Un auto a escala que obedece al control remoto y frena solo</h1>
+        <p class="hero-bajada">
+          Construimos un auto con forma de Fennec que se maneja con un control inalámbrico o se maneja solo,
+          usando sensores para detectar obstáculos y luces para señalizar lo que hace.
+          Es nuestro proyecto de la materia de Sensores.
+        </p>
+        <div class="hero-acciones">
+          <a class="boton boton--principal" href="#simulador">Probar el simulador</a>
+          <a class="boton" href="#componentes">Ver componentes y dónde comprarlos</a>
+        </div>
+
+        <dl class="ficha">
+          <div><dt>Cerebros</dt><dd>2 ESP32, una en el auto y otra en el control</dd></div>
+          <div><dt>Comunicación</dt><dd>ESP-NOW, por radio y sin router</dd></div>
+          <div><dt>Tracción</dt><dd>2 motores N20 con reductor, en las ruedas traseras</dd></div>
+          <div><dt>Dirección</dt><dd>1 servo que gira el eje delantero</dd></div>
+          <div><dt>Sensores</dt><dd>Ultrasonido al frente e infrarrojo atrás</dd></div>
+          <div><dt>Presupuesto</dt><dd>$94.000 (ARS), según nuestro documento</dd></div>
+        </dl>
+      </div>
+
+      <!-- Simulador: es el elemento principal de la portada -->
+      <div class="sim" id="simulador">
+        <div class="sim-cabecera">
+          <h2>Simulador del auto</h2>
+          <p id="simAyuda">Es una simulación de cómo decide el auto. Haz clic en la pista y usa las flechas o WASD. Arrastra los bloques para cambiar los obstáculos.</p>
+        </div>
+        <canvas id="pista" width="760" height="440" tabindex="0"
+                aria-label="Vista desde arriba del auto en una pista con obstáculos. Con el teclado: flechas o WASD para conducir."></canvas>
+
+        <div class="sim-panel">
+          <div class="sim-lecturas" aria-live="off">
+            <div><span>Sensor del frente</span><strong id="lecFrente">–</strong></div>
+            <div><span>Sensor de atrás</span><strong id="lecAtras">–</strong></div>
+            <div><span>Velocidad</span><strong id="lecVel">–</strong></div>
+            <div><span>Modo</span><strong id="lecModo">–</strong></div>
+          </div>
+
+          <ul class="sim-luces" aria-label="Estado de las luces del auto">
+            <li><i class="lampara lampara--roja" id="lamRoja"></i>Rojas</li>
+            <li><i class="lampara lampara--ambar" id="lamIzq"></i>Giro izq.</li>
+            <li><i class="lampara lampara--ambar" id="lamDer"></i>Giro der.</li>
+            <li><i class="lampara lampara--blanca" id="lamBlanca"></i>Faros</li>
+          </ul>
+
+          <div class="sim-controles">
+            <div class="grupo" role="group" aria-label="Modo de conducción">
+              <button type="button" data-modo="manual" aria-pressed="false">Manual</button>
+              <button type="button" data-modo="auto" aria-pressed="true">Automático</button>
+            </div>
+            <button type="button" class="boton-luz" id="btnLuces" aria-pressed="false">Luces delanteras</button>
+            <div class="cruceta" role="group" aria-label="Controles táctiles de conducción">
+              <button type="button" data-tecla="up" aria-label="Adelante">▲</button>
+              <button type="button" data-tecla="left" aria-label="Girar a la izquierda">◀</button>
+              <button type="button" data-tecla="down" aria-label="Marcha atrás">▼</button>
+              <button type="button" data-tecla="right" aria-label="Girar a la derecha">▶</button>
+            </div>
+          </div>
+          <p class="sim-nota">Reglas iguales a las del auto: frena a 10 cm de un obstáculo al frente, no retrocede si hay algo detrás y, en automático, empieza a esquivar a los 15 cm.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PROYECTO ===================== -->
+    <section class="seccion" id="proyecto">
+      <div class="seccion-cab">
+        <h2>De qué trata el proyecto</h2>
+        <p class="bajada">Un auto, dos formas de manejarlo y varios sensores que cuidan que no choque.</p>
+      </div>
+
+      <div class="dos-col">
+        <div class="texto">
+          <p>
+            Diseñamos y construimos un auto a escala que funciona de dos maneras: <strong>manual</strong>, con un control remoto,
+            y <strong>autónoma</strong>, usando sensores y un sistema de control electrónico.
+          </p>
+          <p>
+            El auto lleva una ESP32 que procesa lo que miden los sensores y acciona los motores, el servo y las luces.
+            El control lleva una segunda ESP32 que lee los joysticks y los botones y manda las órdenes por radio
+            con <strong>ESP-NOW</strong>, un protocolo que une ESP32 entre sí y envía datos pequeños muy rápido, sin necesidad de WiFi ni de Bluetooth.
+          </p>
+          <p>
+            Hay detección de obstáculos tanto en el manejo manual como en el automático. Y como objetivo del proyecto queda sumar
+            un sistema de detección de vuelcos con un mecanismo que ayude al auto a volver a su posición.
+          </p>
+          <p>
+            Buscamos juntar en un solo dispositivo lo que aprendimos de electrónica, programación, mecánica y automatización.
+          </p>
+        </div>
+
+        <aside class="lateral">
+          <h3>Por qué lo elegimos</h3>
+          <ul class="lista-razones">
+            <li>Nos interesa la robótica y queríamos construir un vehículo que haga cosas solo, sin depender todo el tiempo de una persona.</li>
+            <li>Combinar un auto a control remoto común con conducción autónoma nos obliga a trabajar con varios tipos de sensores, actuadores y sistemas de control.</li>
+            <li>Nos deja aplicar lo de nuestra especialidad (programación, electrónica y automatización) y diseñar un mecanismo, el de la dirección, que complemente a la electrónica.</li>
+            <li>Queremos que el auto no solo se mueva: que reconozca su entorno, reaccione ante obstáculos y detecte situaciones anormales.</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===================== PROBLEMAS ===================== -->
+    <section class="seccion seccion--alt" id="problemas">
+      <div class="seccion-cab">
+        <h2>Problemas que resuelve y problemas que tuvimos</h2>
+        <p class="bajada">Lo que el auto soluciona, y lo que nos falló mientras lo construíamos.</p>
+      </div>
+
+      <div class="soluciona">
+        <article>
+          <h3>Choques</h3>
+          <p>El sensor ultrasónico del frente bloquea el avance cuando hay algo a menos de 10 cm. El infrarrojo de atrás bloquea la marcha atrás. Funciona igual si manejas tú o si va solo.</p>
+        </article>
+        <article>
+          <h3>Depender de una persona</h3>
+          <p>En modo automático el auto avanza, detecta el obstáculo, retrocede girando y sigue por otro camino, sin que nadie toque el control.</p>
+        </article>
+        <article>
+          <h3>Que nadie entienda qué hace</h3>
+          <p>Las luces cuentan lo que pasa: rojas si está quieto, frena, va en reversa o hay un obstáculo; amarillas intermitentes cuando gira; blancas como faros.</p>
+        </article>
+        <article>
+          <h3>Quedarse sin control</h3>
+          <p>Si el auto deja de recibir señal del control por más de medio segundo, detiene los motores.</p>
+        </article>
+      </div>
+
+      <h3 class="subtitulo">Lo que nos falló y cómo lo resolvimos</h3>
+      <div class="acordeon" id="acordeon">
+        <details>
+          <summary>El sensor de luz no funcionaba</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> el módulo con fotorresistencia marcaba valores cerca de 0 y saltaba sin sentido, aunque le apuntáramos con una linterna. Las luces blancas quedaban siempre encendidas.</p>
+            <p><strong>Causa:</strong> el módulo estaba dañado; ni cambiando los cables volvió a dar lecturas estables.</p>
+            <p><strong>Solución:</strong> sacamos el sensor y las luces blancas se encienden y apagan con un botón del control.</p>
+          </div>
+        </details>
+        <details>
+          <summary>El Bluetooth no lograba conectar</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> probamos un Arduino Mega con un módulo Bluetooth hablando con la ESP32 del control. La ESP32 veía el módulo (aparecía su dirección y con buena señal) pero la conexión fallaba una y otra vez.</p>
+            <p><strong>Causa:</strong> no llegamos a saberla con seguridad. Probamos la clave, la velocidad y dos formas de conectar sin éxito.</p>
+            <p><strong>Solución:</strong> volvimos a una ESP32 en el auto y pasamos a ESP-NOW. Se conectaron al instante y pudimos prender y apagar un LED desde un botón de la otra placa.</p>
+          </div>
+        </details>
+        <details>
+          <summary>El motor no giraba aunque el cableado parecía bien</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> el servo respondía, pero el motor no se movía.</p>
+            <p><strong>Causa:</strong> el GND de la ESP32 no estaba unido con el GND de la fuente de los motores, así que el L293D no entendía las señales.</p>
+            <p><strong>Solución:</strong> unir todos los GND en un punto común. Es una regla del auto: todo comparte tierra.</p>
+          </div>
+        </details>
+        <details>
+          <summary>El joystick siempre pedía -100</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> al iniciar, cualquier joystick mandaba -100 y el motor arrancaba a fondo sin bajar la velocidad.</p>
+            <p><strong>Causa:</strong> el cable de alimentación (VCC) del joystick estaba mal conectado, y la ESP32 leía 0.</p>
+            <p><strong>Solución:</strong> alimentarlo con 3.3 V y mostrar en el monitor serie la lectura cruda para comprobar que en reposo marca cerca de 2000.</p>
+          </div>
+        </details>
+        <details>
+          <summary>El sensor infrarrojo detectaba siempre, o solo al pasar la mano</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> apenas encendía ya "veía" algo, y al mover el tornillo el comportamiento cambiaba.</p>
+            <p><strong>Causa:</strong> la sensibilidad se regula con un potenciómetro, y el módulo (un HW-201, hermano del FC-51) da 0 cuando detecta, al revés de lo que supusimos al principio.</p>
+            <p><strong>Solución:</strong> invertir la lógica en el código y ajustar el tornillo hasta que detecte la mano a unos 5 cm.</p>
+          </div>
+        </details>
+        <details>
+          <summary>La carcasa del Fennec era un bloque macizo</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> los modelos 3D del Fennec que bajamos eran macizos, sin lugar para la electrónica.</p>
+            <p><strong>Causa:</strong> están pensados para exhibir, no para llevar piezas adentro.</p>
+            <p><strong>Solución:</strong> vaciarlo en el programa de la impresora con una parte negativa, o usar un modelo que ya venga como carcasa hueca y un fondo aparte. Mira la sección de la carcasa.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Los motores N20 reciben menos voltaje del que se espera</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> con 5 V los motores de 6 V giran lentos.</p>
+            <p><strong>Causa:</strong> el L293D "se come" entre 1,4 y 2,6 V según la carga.</p>
+            <p><strong>Solución:</strong> alimentar el L293D con las dos baterías 18650 en serie (7,4 V) y dejar un regulador de 5 V solo para la electrónica.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Sin capacitores, la placa puede reiniciarse al arrancar los motores</summary>
+          <div class="detalle">
+            <p><strong>Qué pasaba:</strong> en la prueba, sin capacitores a mano, existe el riesgo de que la ESP32 se reinicie o el motor vaya a tirones.</p>
+            <p><strong>Causa:</strong> los motores generan picos de corriente y ruido eléctrico.</p>
+            <p><strong>Solución:</strong> un capacitor de 100 nF en cada motor y uno electrolítico en la alimentación. Mientras tanto, un arranque suave en el código hace que la velocidad suba de a poco.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ===================== FUNCIONAMIENTO ===================== -->
+    <section class="seccion" id="funcionamiento">
+      <div class="seccion-cab">
+        <h2>Cómo funciona</h2>
+        <p class="bajada">Una ESP32 manda, la otra obedece, y los sensores tienen la última palabra.</p>
+      </div>
+
+      <figure class="diagrama">
+        <svg viewBox="0 0 980 360" role="img" aria-labelledby="diagTitulo diagDesc">
+          <title id="diagTitulo">Diagrama del sistema</title>
+          <desc id="diagDesc">El control, con dos joysticks y dos botones, envía datos por ESP-NOW al auto. El auto tiene un L293D que mueve dos motores, un servo, dos sensores y los LEDs.</desc>
+
+          <!-- Control -->
+          <g>
+            <rect x="20" y="40" width="270" height="280" rx="8" class="d-caja"/>
+            <text x="40" y="76" class="d-titulo">Control (ESP32 n.º 1)</text>
+            <rect x="40" y="96" width="230" height="48" rx="6" class="d-item"/><text x="56" y="126" class="d-texto">Joystick 1: motores</text>
+            <rect x="40" y="154" width="230" height="48" rx="6" class="d-item"/><text x="56" y="184" class="d-texto">Joystick 2: dirección</text>
+            <rect x="40" y="212" width="230" height="48" rx="6" class="d-item"/><text x="56" y="242" class="d-texto">Botón de modo automático</text>
+            <rect x="40" y="270" width="230" height="38" rx="6" class="d-item"/><text x="56" y="295" class="d-texto">Botón de luces delanteras</text>
+          </g>
+
+          <!-- Enlace -->
+          <g>
+            <line x1="290" y1="180" x2="470" y2="180" class="d-enlace"/>
+            <line x1="290" y1="180" x2="470" y2="180" class="d-paquetes"/>
+            <text x="380" y="150" text-anchor="middle" class="d-titulo d-titulo--chico">ESP-NOW</text>
+            <text x="380" y="214" text-anchor="middle" class="d-texto d-texto--chico">por radio, sin router</text>
+          </g>
+
+          <!-- Auto -->
+          <g>
+            <rect x="470" y="20" width="490" height="320" rx="8" class="d-caja d-caja--auto"/>
+            <text x="490" y="56" class="d-titulo">Auto (ESP32 n.º 2)</text>
+
+            <rect x="490" y="74" width="210" height="52" rx="6" class="d-item d-item--sensor"/><text x="504" y="98" class="d-texto">HC-SR04</text><text x="504" y="116" class="d-texto d-texto--chico">frente: frena a 10 cm</text>
+            <rect x="490" y="134" width="210" height="52" rx="6" class="d-item d-item--sensor"/><text x="504" y="158" class="d-texto">HW-201 (infrarrojo)</text><text x="504" y="176" class="d-texto d-texto--chico">atrás: bloquea la reversa</text>
+
+            <rect x="720" y="74" width="220" height="52" rx="6" class="d-item d-item--mov"/><text x="734" y="98" class="d-texto">L293D</text><text x="734" y="116" class="d-texto d-texto--chico">maneja los motores</text>
+            <rect x="720" y="134" width="220" height="52" rx="6" class="d-item d-item--mov"/><text x="734" y="158" class="d-texto">2 motores N20</text><text x="734" y="176" class="d-texto d-texto--chico">tracción trasera</text>
+            <rect x="720" y="194" width="220" height="52" rx="6" class="d-item d-item--mov"/><text x="734" y="218" class="d-texto">Servo SG90</text><text x="734" y="236" class="d-texto d-texto--chico">gira el eje delantero</text>
+
+            <rect x="490" y="194" width="210" height="52" rx="6" class="d-item d-item--luz"/><text x="504" y="218" class="d-texto">LEDs</text><text x="504" y="236" class="d-texto d-texto--chico">rojos, amarillos y blancos</text>
+
+            <rect x="490" y="262" width="450" height="56" rx="6" class="d-item d-item--energia"/><text x="504" y="286" class="d-texto">Energía</text><text x="504" y="304" class="d-texto d-texto--chico">2 baterías 18650 en serie (7,4 V) y regulador a 5 V</text>
+          </g>
+        </svg>
+      </figure>
+
+      <div class="pestanas" id="pestanasFuncion">
+        <div class="pestanas-lista" role="tablist" aria-label="Modos de funcionamiento">
+          <button role="tab" id="tab-manual" aria-controls="panel-manual" aria-selected="true">Manual</button>
+          <button role="tab" id="tab-auto" aria-controls="panel-auto" aria-selected="false" tabindex="-1">Automático</button>
+          <button role="tab" id="tab-luces" aria-controls="panel-luces" aria-selected="false" tabindex="-1">Luces y señales</button>
+          <button role="tab" id="tab-seguridad" aria-controls="panel-seguridad" aria-selected="false" tabindex="-1">Seguridad</button>
+        </div>
+
+        <div role="tabpanel" id="panel-manual" aria-labelledby="tab-manual" class="panel">
+          <p>El <strong>joystick 1</strong> mueve los dos motores hacia adelante o hacia atrás, y la velocidad depende de cuánto lo inclines. El <strong>joystick 2</strong> gira el servo, que mueve el eje delantero hacia la izquierda o la derecha.</p>
+          <p>Aunque tú pidas avanzar, si el sensor del frente detecta algo a menos de 10 cm el auto se detiene y no avanza hasta que cambies de dirección. Lo mismo pasa hacia atrás con el sensor infrarrojo.</p>
+        </div>
+        <div role="tabpanel" id="panel-auto" aria-labelledby="tab-auto" class="panel" hidden>
+          <p>Con el botón de modo automático el auto maneja solo. Avanza en línea recta, y cuando el ultrasonido marca menos de 15 cm hace tres cosas en orden:</p>
+          <ol class="pasos">
+            <li>Retrocede girando hacia un lado, durante unos 0,7 segundos o hasta que el sensor de atrás vea algo.</li>
+            <li>Avanza girando hacia el lado contrario, otros 0,7 segundos.</li>
+            <li>Vuelve a avanzar derecho, y en el próximo obstáculo alterna el lado.</li>
+          </ol>
+          <p>Mientras tanto, las luces señalizan hacia dónde va. Puedes ver esta lógica funcionando en el simulador de arriba.</p>
+        </div>
+        <div role="tabpanel" id="panel-luces" aria-labelledby="tab-luces" class="panel" hidden>
+          <ul class="leyenda-luces">
+            <li><i class="lampara lampara--roja on"></i><span><strong>Rojas traseras (2).</strong> Encendidas cuando el auto está quieto, frena, va en reversa o hay un obstáculo. Se apagan solo cuando avanza libre.</span></li>
+            <li><i class="lampara lampara--ambar on"></i><span><strong>Amarillas (2).</strong> Parpadean de a un lado cuando el auto gira a la izquierda o a la derecha, según la posición del servo.</span></li>
+            <li><i class="lampara lampara--blanca on"></i><span><strong>Blancas (2).</strong> Son los faros. Se encienden y apagan con un botón del control, tanto en manual como en automático.</span></li>
+          </ul>
+        </div>
+        <div role="tabpanel" id="panel-seguridad" aria-labelledby="tab-seguridad" class="panel" hidden>
+          <ul class="lista-simple">
+            <li>Si el auto pierde la señal del control por más de 0,5 segundos, para los motores.</li>
+            <li>El frente y la reversa tienen sensores independientes: bloquear una dirección no impide la otra.</li>
+            <li>Arranque suave opcional: la velocidad sube de a poco para bajar los picos de corriente.</li>
+            <li>Un solo punto de tierra común (GND) para todo el circuito.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== COMPONENTES ===================== -->
+    <section class="seccion seccion--alt" id="componentes">
+      <div class="seccion-cab">
+        <h2>Componentes y dónde comprarlos</h2>
+        <p class="bajada">Todo lo que lleva el auto y el control. Los botones de compra abren una búsqueda en Mercado Libre; revisa el vendedor y el precio antes de comprar.</p>
+      </div>
+
+      <div class="filtros" id="filtros" role="group" aria-label="Filtrar componentes por tipo">
+        <button type="button" data-filtro="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-filtro="control" aria-pressed="false">Control</button>
+        <button type="button" data-filtro="auto" aria-pressed="false">Auto</button>
+        <button type="button" data-filtro="sensores" aria-pressed="false">Sensores</button>
+        <button type="button" data-filtro="potencia" aria-pressed="false">Movimiento y energía</button>
+        <button type="button" data-filtro="luces" aria-pressed="false">Luces y pasivos</button>
+        <button type="button" data-filtro="estructura" aria-pressed="false">Estructura</button>
+      </div>
+      <p class="contador-filtro" id="contadorFiltro" aria-live="polite"></p>
+
+      <ul class="catalogo" id="catalogo"></ul>
+      <noscript><p class="aviso">Para ver el catálogo de componentes se necesita JavaScript.</p></noscript>
+
+      <!-- Sensores -->
+      <h3 class="subtitulo" id="sensores">Por qué elegimos estos sensores</h3>
+      <div class="tabla-ancha">
+        <table>
+          <thead>
+            <tr><th scope="col">Sensor</th><th scope="col">Por qué lo elegimos</th><th scope="col">Alternativas</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">HC-SR04 (ultrasónico), fijo sobre el capó, mirando al frente</th>
+              <td>Es barato, mide de 2 cm a 4 m y hay mucho código y tutoriales. Al ir fijo, sin servo, es simple y no ocupa espacio dentro. Sirve de sensor frontal para frenar (bloquea el avance a 10 cm) y para esquivar en el modo automático. Se alimenta a 5 V, y como su pin ECHO sale a 5 V, lleva un divisor de voltaje para la ESP32.</td>
+              <td>VL53L0X (láser, I2C, 3.3 V), HC-SR04P (3.3 V), JSN-SR04T (sonda separada)</td>
+            </tr>
+            <tr>
+              <th scope="row">HW-201 (infrarrojo de obstáculos), en la parte trasera</th>
+              <td>Su alcance corto, regulable con el potenciómetro (en nuestras pruebas detecta a unos 5 cm), alcanza para la marcha atrás, que es lenta. Tiene salida digital simple (da 0 y enciende su LED al detectar) y se alimenta a 3.3 V, sin necesitar divisor. Se usa para bloquear la reversa. Puede fallar con luz solar intensa y no detecta bien objetos negros.</td>
+              <td>FC-51 (prácticamente igual), KY-032, Sharp GP2Y0A21 (analógico, 10 a 80 cm, mide distancia), un segundo HC-SR04</td>
+            </tr>
+            <tr>
+              <th scope="row">KY-023 (joystick analógico), en el control</th>
+              <td>Da 2 ejes analógicos y un pulsador, y se lee directo con la ESP32 (se alimenta a 3.3 V). Usamos dos: uno para el motor (adelante y atrás) y otro para el servo (dirección).</td>
+              <td>MPU6050 (manejo por inclinación), botones</td>
+            </tr>
+            <tr>
+              <th scope="row">Pulsadores (KY-004 o comunes), en el control</th>
+              <td>Uno enciende las luces delanteras y otro activa el modo automático. Se leen con INPUT_PULLUP y un antirrebote por software que ignora pulsaciones durante 250 ms tras cada una.</td>
+              <td>Un pulsador común, o el botón del propio joystick</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="subtitulo">Acondicionadores de señal</h3>
+      <div class="tabla-ancha tabla-corta">
+        <table>
+          <thead>
+            <tr><th scope="col">Acondicionador</th><th scope="col">Dónde va</th><th scope="col">Qué usamos</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Divisor de voltaje</th><td>Pin ECHO del HC-SR04 (baja 5 V a unos 3.3 V)</td><td>1 kΩ + 2 kΩ</td></tr>
+            <tr><th scope="row">Capacitor cerámico 100 nF</th><td>Entre los terminales de cada motor</td><td>1 por motor</td></tr>
+            <tr><th scope="row">Resistencia en serie</th><td>Cada LED</td><td>220 Ω en los rojos y amarillos, 150 Ω en los blancos</td></tr>
+            <tr><th scope="row">Resistencia de base</th><td>Entre la ESP32 y el transistor de los faros</td><td>1 kΩ, 1 unidad</td></tr>
+            <tr><th scope="row">Filtro y antirrebote por software</th><td>Joysticks y botones</td><td>Sin componentes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="subtitulo" id="datasheets">Hojas de datos</h3>
+      <p class="texto-ancho">Las que usamos para entender los sensores. Haz clic en una para verla grande.</p>
+      <div class="galeria" id="galeria">
+        <div class="galeria-grupo">
+          <h4>HC-SR04</h4>
+          <ul>
+            <li><button type="button" data-img="img/datasheets/hcsr04-1.jpg" data-leyenda="HC-SR04: características, conexión y parámetros eléctricos"><img src="img/datasheets/hcsr04-1.jpg" alt="Hoja de datos del HC-SR04, página 1" loading="lazy"></button></li>
+            <li><button type="button" data-img="img/datasheets/hcsr04-2.jpg" data-leyenda="HC-SR04: diagrama de tiempos"><img src="img/datasheets/hcsr04-2.jpg" alt="Hoja de datos del HC-SR04, página 2" loading="lazy"></button></li>
+            <li><button type="button" data-img="img/datasheets/hcsr04-3.jpg" data-leyenda="HC-SR04: advertencias de uso"><img src="img/datasheets/hcsr04-3.jpg" alt="Hoja de datos del HC-SR04, advertencias" loading="lazy"></button></li>
+          </ul>
+        </div>
+        <div class="galeria-grupo">
+          <h4>FC-51</h4>
+          <ul>
+            <li><button type="button" data-img="img/datasheets/fc51-1.jpg" data-leyenda="FC-51: descripción y modo de funcionamiento"><img src="img/datasheets/fc51-1.jpg" alt="Hoja de datos del FC-51, página 1" loading="lazy"></button></li>
+            <li><button type="button" data-img="img/datasheets/fc51-2.jpg" data-leyenda="FC-51: especificaciones"><img src="img/datasheets/fc51-2.jpg" alt="Hoja de datos del FC-51, especificaciones" loading="lazy"></button></li>
+            <li><button type="button" data-img="img/datasheets/fc51-3.jpg" data-leyenda="FC-51: definición de pines"><img src="img/datasheets/fc51-3.jpg" alt="Hoja de datos del FC-51, pines" loading="lazy"></button></li>
+            <li><button type="button" data-img="img/datasheets/fc51-4.jpg" data-leyenda="FC-51: ejemplo de código"><img src="img/datasheets/fc51-4.jpg" alt="Hoja de datos del FC-51, ejemplo de código" loading="lazy"></button></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PRESUPUESTO ===================== -->
+    <section class="seccion" id="presupuesto">
+      <div class="seccion-cab">
+        <h2>Presupuesto</h2>
+        <p class="bajada">Cuánto costó pensar el auto, y en qué se va la plata.</p>
+      </div>
+
+      <div class="pres-grid">
+        <div>
+          <div class="barra-pres" id="barraPres" role="img" aria-label="Reparto del presupuesto por categorías"></div>
+          <ul class="leyenda-pres" id="leyendaPres"></ul>
+        </div>
+        <div class="tabla-ancha tabla-pres">
+          <table>
+            <caption>Presupuesto de nuestro documento (ARS)</caption>
+            <thead><tr><th scope="col">Componente</th><th scope="col">Cant.</th><th scope="col" class="num">Precio</th></tr></thead>
+            <tbody id="tablaPres"></tbody>
+            <tfoot id="pieTablaPres"></tfoot>
+          </table>
+        </div>
+      </div>
+      <p class="nota">Es el presupuesto original. Después hubo cambios, como las baterías 18650 en lugar de la de 9 V, el transistor de los faros y los capacitores, que todavía no figuran con precio en la tabla.</p>
+    </section>
+
+    <!-- ===================== CONEXIONES ===================== -->
+    <section class="seccion seccion--alt" id="conexiones">
+      <div class="seccion-cab">
+        <h2>Conexiones</h2>
+        <p class="bajada">Qué va a qué pin, en cada ESP32.</p>
+      </div>
+
+      <div class="pestanas" id="pestanasPines">
+        <div class="pestanas-lista" role="tablist" aria-label="Placa">
+          <button role="tab" id="tab-pcontrol" aria-controls="panel-pcontrol" aria-selected="true">Control</button>
+          <button role="tab" id="tab-pauto" aria-controls="panel-pauto" aria-selected="false" tabindex="-1">Auto</button>
+        </div>
+        <div class="buscador">
+          <label for="buscaPin">Buscar un pin o componente</label>
+          <input id="buscaPin" type="search" placeholder="Por ejemplo: GPIO25, servo, L293D" autocomplete="off">
+        </div>
+
+        <div role="tabpanel" id="panel-pcontrol" aria-labelledby="tab-pcontrol" class="panel"></div>
+        <div role="tabpanel" id="panel-pauto" aria-labelledby="tab-pauto" class="panel" hidden></div>
+      </div>
+
+      <div class="regla-gnd">
+        <strong>Regla de oro:</strong> todos los GND (batería, regulador, ESP32, L293D, servo, sensores, LEDs y transistor) van unidos en un punto común.
+        Sin eso, el L293D no entiende las señales y los motores no responden.
+      </div>
+    </section>
+
+    <!-- ===================== CARCASA ===================== -->
+    <section class="seccion" id="carcasa">
+      <div class="seccion-cab">
+        <h2>La carcasa del Fennec</h2>
+        <p class="bajada">Un auto de Rocket League, impreso en 3D y hueco por dentro.</p>
+      </div>
+
+      <div class="carcasa-grid">
+        <figure class="fig-carcasa">
+          <img src="img/carcasa-bambu.jpg" alt="Captura de Bambu Studio con la carcasa del Fennec escalada, se ve el interior hueco y los pasos de rueda" loading="lazy">
+          <figcaption>La carcasa en Bambu Studio, escalada al 131,81 % (222 mm de largo en esa captura).</figcaption>
+        </figure>
+
+        <div class="texto">
+          <p>Elegimos el <strong>Fennec</strong>, un auto del videojuego Rocket League. Usamos un modelo hecho por fans, pensado para imprimir en 3D, y lo agrandamos para que entre la electrónica: queda de unos <strong>200 × 100 mm</strong>.</p>
+          <img class="fennec-render" src="img/fennec.jpg" alt="Render del Fennec de Rocket League" width="180" height="180">
+          <h3>Cómo la vaciamos</h3>
+          <ol class="pasos">
+            <li>Comprobamos en la previsualización si el modelo era hueco o macizo, mirando una capa del medio.</li>
+            <li>Si es macizo, cargamos el mismo modelo como <strong>parte negativa</strong>, lo reducimos para dejar paredes de unos 3 mm y lo bajamos para abrir el fondo.</li>
+            <li>Imprimimos con relleno bajo y soportes, y ponemos la carcasa sobre un chasis plano como una tapa.</li>
+          </ol>
+          <h3>La dirección</h3>
+          <p>El servo gira un eje delantero con las dos ruedas, sujeto por un tornillo en el centro. Así el peso lo lleva el tornillo y el servo solo lo hace girar. Los dos motores N20 van atrás, uno por rueda.</p>
+        </div>
+      </div>
+
+      <p class="nota">El Fennec y Rocket League pertenecen a sus dueños. Usamos el modelo solo para este trabajo escolar.</p>
+    </section>
+
+    <!-- ===================== BITÁCORA ===================== -->
+    <section class="seccion seccion--alt" id="bitacora">
+      <div class="seccion-cab">
+        <h2>Bitácora</h2>
+        <p class="bajada">Cómo fue cambiando el proyecto.</p>
+      </div>
+
+      <ol class="linea-tiempo">
+        <li>
+          <time datetime="2026-09-30">30-09</time>
+          <div>
+            <h3>Elegimos el auto</h3>
+            <p>Decidimos usar dos motorreductores TT para tracción trasera y poner un sensor fotosensible para encender luces blancas en la oscuridad, como faros. También elegimos el modelo del auto: el Fennec de Rocket League.</p>
+          </div>
+        </li>
+        <li>
+          <time datetime="2026-10-07">7-10</time>
+          <div>
+            <h3>Cambios de motores y de placa</h3>
+            <p>Cambiamos los motorreductores TT por micromotores N20, que son más rápidos y más fáciles de conectar. También cambiamos la ESP32 del auto por un Arduino Mega, para conectar los sensores con más facilidad, que se comunicaría con la ESP32 del joystick por Bluetooth. Quitamos la fotorresistencia, que no mostró señal de funcionar, y la reemplazamos por un botón que enciende y apaga los LEDs.</p>
+          </div>
+        </li>
+        <li>
+          <time datetime="2026-10-08">8-10</time>
+          <div>
+            <h3>Volvimos a la ESP32 y probamos ESP-NOW</h3>
+            <p>El módulo Bluetooth del Mega no conectó con la ESP32, así que volvimos a una ESP32 en el auto. Al probar ESP-NOW entre las dos placas se conectaron rápido y sin errores: pudimos prender y apagar un LED con un botón, una placa emisora y la otra receptora.</p>
+          </div>
+        </li>
+        <li>
+          <span class="sin-fecha">Después</span>
+          <div>
+            <h3>Pruebas de motores, sensores y carcasa</h3>
+            <p>Probamos los dos motores con un joystick, descubrimos que faltaba unir los GND, ajustamos el sensor infrarrojo para que detecte la mano a unos 5 cm, definimos las baterías 18650 y el regulador de 5 V, y preparamos la carcasa hueca del Fennec en 3D.</p>
+          </div>
+        </li>
+      </ol>
+
+      <h3 class="subtitulo">Lo que sigue</h3>
+      <ul class="lista-simple siguiente">
+        <li><strong>Detección de vuelcos.</strong> Es parte del objetivo original: detectar que el auto se dio vuelta y activar un mecanismo para intentar devolverlo a su posición.</li>
+        <li><strong>Seguidor de línea.</strong> Una idea con un sensor HW-511 debajo del auto, para que siga una cinta negra.</li>
+        <li><strong>Giro más fino en las curvas.</strong> Que la rueda de adentro vaya un poco más lenta que la de afuera.</li>
+        <li><strong>Circuito soldado.</strong> Pasar de la protoboard a una placa perforada, para evitar falsos contactos con la vibración.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="pie-interior">
+      <img src="img/logo.png" alt="" width="48" height="48">
+      <p>Proyecto de la materia de Sensores, para la Expotécnica.<br>
+      Los links de compra abren búsquedas en Mercado Libre; los precios son los de nuestro presupuesto y pueden haber cambiado.</p>
+      <a class="boton" href="#inicio">Volver arriba</a>
+    </div>
+  </footer>
+
+  <!-- Visor de hojas de datos -->
+  <dialog id="visor" aria-label="Visor de hoja de datos">
+    <form method="dialog" class="visor-barra">
+      <p id="visorLeyenda"></p>
+      <div>
+        <button type="button" id="visorPrev" aria-label="Anterior">Anterior</button>
+        <button type="button" id="visorNext" aria-label="Siguiente">Siguiente</button>
+        <button value="cerrar" aria-label="Cerrar visor">Cerrar</button>
+      </div>
+    </form>
+    <img id="visorImg" alt="">
+  </dialog>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
